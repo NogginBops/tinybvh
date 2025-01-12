@@ -1378,7 +1378,7 @@ void BVH::Build()
 	// subdivide root node recursively
 	uint32_t task[256], taskCount = 0, nodeIdx = 0;
 	BVHNode& root = bvhNode[0];
-	bvhvec3 minDim = (root.aabbMax - root.aabbMin) * 1e-20f, bestLMin = 0, bestLMax = 0, bestRMin = 0, bestRMax = 0;
+	bvhvec3 minDim = bvhvec3((root.aabbMax - root.aabbMin) * 1e-20f), bestLMin = bvhvec3(0), bestLMax = bvhvec3(0), bestRMin = bvhvec3(0), bestRMax = bvhvec3(0);
 	while (1)
 	{
 		while (1)
@@ -1386,7 +1386,7 @@ void BVH::Build()
 			BVHNode& node = bvhNode[nodeIdx];
 			// find optimal object split
 			bvhvec3 binMin[3][BVHBINS], binMax[3][BVHBINS];
-			for (uint32_t a = 0; a < 3; a++) for (uint32_t i = 0; i < BVHBINS; i++) binMin[a][i] = BVH_FAR, binMax[a][i] = -BVH_FAR;
+			for (uint32_t a = 0; a < 3; a++) for (uint32_t i = 0; i < BVHBINS; i++) binMin[a][i] = bvhvec3(BVH_FAR), binMax[a][i] = bvhvec3(-BVH_FAR);
 			uint32_t count[3][BVHBINS];
 			memset( count, 0, BVHBINS * 3 * sizeof( uint32_t ) );
 			const bvhvec3 rpd3 = bvhvec3( BVHBINS / (node.aabbMax - node.aabbMin) ), nmin3 = node.aabbMin;
@@ -1409,8 +1409,8 @@ void BVH::Build()
 			uint32_t bestAxis = 0, bestPos = 0;
 			for (int32_t a = 0; a < 3; a++) if ((node.aabbMax[a] - node.aabbMin[a]) > minDim[a])
 			{
-				bvhvec3 lBMin[BVHBINS - 1], rBMin[BVHBINS - 1], l1 = BVH_FAR, l2 = -BVH_FAR;
-				bvhvec3 lBMax[BVHBINS - 1], rBMax[BVHBINS - 1], r1 = BVH_FAR, r2 = -BVH_FAR;
+				bvhvec3 lBMin[BVHBINS - 1], rBMin[BVHBINS - 1], l1 = bvhvec3(BVH_FAR), l2 = bvhvec3(- BVH_FAR);
+				bvhvec3 lBMax[BVHBINS - 1], rBMax[BVHBINS - 1], r1 = bvhvec3(BVH_FAR), r2 = bvhvec3(-BVH_FAR);
 				float ANL[BVHBINS - 1], ANR[BVHBINS - 1];
 				for (uint32_t lN = 0, rN = 0, i = 0; i < BVHBINS - 1; i++)
 				{
@@ -1569,7 +1569,7 @@ void BVH::BuildHQ()
 	ALIGNED( 64 ) Task task[256];
 	uint32_t taskCount = 0, nodeIdx = 0, sliceStart = 0, sliceEnd = triCount + slack;
 	const bvhvec3 minDim = (root.aabbMax - root.aabbMin) * 1e-7f /* don't touch, carefully picked */;
-	bvhvec3 bestLMin = 0, bestLMax = 0, bestRMin = 0, bestRMax = 0;
+	bvhvec3 bestLMin = bvhvec3(0), bestLMax = bvhvec3(0), bestRMin = bvhvec3(0), bestRMax = bvhvec3(0);
 	while (1)
 	{
 		while (1)
@@ -1577,7 +1577,7 @@ void BVH::BuildHQ()
 			BVHNode& node = bvhNode[nodeIdx];
 			// find optimal object split
 			bvhvec3 binMin[3][BVHBINS], binMax[3][BVHBINS];
-			for (uint32_t a = 0; a < 3; a++) for (uint32_t i = 0; i < BVHBINS; i++) binMin[a][i] = BVH_FAR, binMax[a][i] = -BVH_FAR;
+			for (uint32_t a = 0; a < 3; a++) for (uint32_t i = 0; i < BVHBINS; i++) binMin[a][i] = bvhvec3(BVH_FAR), binMax[a][i] = bvhvec3(-BVH_FAR);
 			uint32_t count[3][BVHBINS];
 			memset( count, 0, BVHBINS * 3 * sizeof( uint32_t ) );
 			const bvhvec3 rpd3 = bvhvec3( BVHBINS / (node.aabbMax - node.aabbMin) ), nmin3 = node.aabbMin;
@@ -1600,8 +1600,8 @@ void BVH::BuildHQ()
 			uint32_t bestAxis = 0, bestPos = 0;
 			for (int32_t a = 0; a < 3; a++) if ((node.aabbMax[a] - node.aabbMin[a]) > minDim.cell[a])
 			{
-				bvhvec3 lBMin[BVHBINS - 1], rBMin[BVHBINS - 1], l1 = BVH_FAR, l2 = -BVH_FAR;
-				bvhvec3 lBMax[BVHBINS - 1], rBMax[BVHBINS - 1], r1 = BVH_FAR, r2 = -BVH_FAR;
+				bvhvec3 lBMin[BVHBINS - 1], rBMin[BVHBINS - 1], l1 = bvhvec3(BVH_FAR), l2 = bvhvec3(- BVH_FAR);
+				bvhvec3 lBMax[BVHBINS - 1], rBMax[BVHBINS - 1], r1 = bvhvec3(BVH_FAR), r2 = bvhvec3(-BVH_FAR);
 				float ANL[BVHBINS - 1], ANR[BVHBINS - 1];
 				for (uint32_t lN = 0, rN = 0, i = 0; i < BVHBINS - 1; i++)
 				{
@@ -1633,7 +1633,7 @@ void BVH::BuildHQ()
 				{
 					// setup bins
 					bvhvec3 binMin[BVHBINS], binMax[BVHBINS];
-					for (uint32_t i = 0; i < BVHBINS; i++) binMin[i] = BVH_FAR, binMax[i] = -BVH_FAR;
+					for (uint32_t i = 0; i < BVHBINS; i++) binMin[i] = bvhvec3(BVH_FAR), binMax[i] = bvhvec3(-BVH_FAR);
 					uint32_t countIn[BVHBINS] = { 0 }, countOut[BVHBINS] = { 0 };
 					// populate bins with clipped fragments
 					const float planeDist = (node.aabbMax[a] - node.aabbMin[a]) / (BVHBINS * 0.9999f);
@@ -1664,8 +1664,8 @@ void BVH::BuildHQ()
 						}
 					}
 					// evaluate split candidates
-					bvhvec3 lBMin[BVHBINS - 1], rBMin[BVHBINS - 1], l1 = BVH_FAR, l2 = -BVH_FAR;
-					bvhvec3 lBMax[BVHBINS - 1], rBMax[BVHBINS - 1], r1 = BVH_FAR, r2 = -BVH_FAR;
+					bvhvec3 lBMin[BVHBINS - 1], rBMin[BVHBINS - 1], l1 = bvhvec3(BVH_FAR), l2 = bvhvec3(-BVH_FAR);
+					bvhvec3 lBMax[BVHBINS - 1], rBMax[BVHBINS - 1], r1 = bvhvec3(BVH_FAR), r2 = bvhvec3(-BVH_FAR);
 					float ANL[BVHBINS], ANR[BVHBINS];
 					for (uint32_t lN = 0, rN = 0, i = 0; i < BVHBINS - 1; i++)
 					{
@@ -2243,7 +2243,7 @@ void BVH_Verbose::SplitLeafs( const uint32_t maxPrims )
 				new2.firstTri = node.firstTri + new1.triCount;
 				new2.triCount = node.triCount - new1.triCount, new2.left = new2.right = 0;
 				node.left = newIdx1, node.right = newIdx2, node.triCount = 0;
-				new1.aabbMin = new2.aabbMin = BVH_FAR, new1.aabbMax = new2.aabbMax = -BVH_FAR;
+				new1.aabbMin = new2.aabbMin = bvhvec3(BVH_FAR), new1.aabbMax = new2.aabbMax = bvhvec3(-BVH_FAR);
 				for (uint32_t fi, i = 0; i < new1.triCount; i++)
 					fi = triIdx[new1.firstTri + i],
 					new1.aabbMin = tinybvh_min( new1.aabbMin, fragment[fi].bmin ),
@@ -3629,7 +3629,7 @@ void BVH::BuildHQAVX( const bvhvec4slice& vertices )
 				{
 					// setup bins
 					bvhvec3 binMin[BVHBINS], binMax[BVHBINS];
-					for (uint32_t i = 0; i < BVHBINS; i++) binMin[i] = BVH_FAR, binMax[i] = -BVH_FAR;
+					for (uint32_t i = 0; i < BVHBINS; i++) binMin[i] = bvhvec3(BVH_FAR), binMax[i] = bvhvec3(-BVH_FAR);
 					uint32_t countIn[BVHBINS] = { 0 }, countOut[BVHBINS] = { 0 };
 					// populate bins with clipped fragments
 					const float planeDist = (node.aabbMax[a] - node.aabbMin[a]) / (BVHBINS * 0.9999f);
@@ -3660,8 +3660,8 @@ void BVH::BuildHQAVX( const bvhvec4slice& vertices )
 						}
 					}
 					// evaluate split candidates
-					bvhvec3 lBMin[BVHBINS - 1], rBMin[BVHBINS - 1], l1 = BVH_FAR, l2 = -BVH_FAR;
-					bvhvec3 lBMax[BVHBINS - 1], rBMax[BVHBINS - 1], r1 = BVH_FAR, r2 = -BVH_FAR;
+					bvhvec3 lBMin[BVHBINS - 1], rBMin[BVHBINS - 1], l1 = bvhvec3(BVH_FAR), l2 = bvhvec3(-BVH_FAR);
+					bvhvec3 lBMax[BVHBINS - 1], rBMax[BVHBINS - 1], r1 = bvhvec3(BVH_FAR), r2 = bvhvec3(-BVH_FAR);
 					float ANL[BVHBINS], ANR[BVHBINS];
 					for (uint32_t lN = 0, rN = 0, i = 0; i < BVHBINS - 1; i++)
 					{
