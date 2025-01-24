@@ -82,7 +82,6 @@ void Init()
 	// create OpenCL buffers for wavefront path tracing
 	int N = SCRWIDTH * SCRHEIGHT;
 	pixels = new Buffer( N * sizeof( uint32_t ) );
-	accumulator = new Buffer( N * sizeof( bvhvec4 ) );
 	raysIn = new Buffer( N * sizeof( bvhvec4 ) * 4 );
 	raysOut = new Buffer( N * sizeof( bvhvec4 ) * 4 );
 	connections = new Buffer( N * 3 * sizeof( bvhvec4 ) * 3 );
@@ -98,9 +97,9 @@ void Init()
 	AddMesh( "./testdata/bistro_ext_part1.bin", 1, bvhvec3( 0 ) );
 	AddMesh( "./testdata/bistro_ext_part2.bin", 1, bvhvec3( 0 ) );
 	// build bvh (here: 'compressed wide bvh', for efficient GPU rendering)
-	if (!bvh.Load( "cwbvh.bin" ))
+	if (!bvh.Load( "cwbvh.bin", triCount ))
 	{
-		bvh.BuildHQ( tris, triCount );
+		bvh.Build( tris, triCount );
 		bvh.Save( "cwbvh.bin" ); // cache for next run.
 	}
 	// create OpenCL buffers for BVH data
