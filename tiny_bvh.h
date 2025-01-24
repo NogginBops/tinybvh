@@ -1697,7 +1697,7 @@ void BVH::BuildHQ()
 			BVHNode& node = bvhNode[nodeIdx];
 			// find optimal object split
 			bvhvec3 binMin[3][HQBVHBINS], binMax[3][HQBVHBINS];
-			for (uint32_t a = 0; a < 3; a++) for (uint32_t i = 0; i < HQBVHBINS; i++) binMin[a][i] = BVH_FAR, binMax[a][i] = -BVH_FAR;
+			for (uint32_t a = 0; a < 3; a++) for (uint32_t i = 0; i < HQBVHBINS; i++) binMin[a][i] = bvhvec3(BVH_FAR), binMax[a][i] = bvhvec3(-BVH_FAR);
 			uint32_t count[3][HQBVHBINS];
 			memset( count, 0, HQBVHBINS * 3 * sizeof( uint32_t ) );
 			const bvhvec3 rpd3 = bvhvec3( HQBVHBINS / (node.aabbMax - node.aabbMin) ), nmin3 = node.aabbMin;
@@ -1720,8 +1720,8 @@ void BVH::BuildHQ()
 			uint32_t bestAxis = 0, bestPos = 0;
 			for (int32_t a = 0; a < 3; a++) if ((node.aabbMax[a] - node.aabbMin[a]) > minDim.cell[a])
 			{
-				bvhvec3 lBMin[HQBVHBINS - 1], rBMin[HQBVHBINS - 1], l1 = BVH_FAR, l2 = -BVH_FAR;
-				bvhvec3 lBMax[HQBVHBINS - 1], rBMax[HQBVHBINS - 1], r1 = BVH_FAR, r2 = -BVH_FAR;
+				bvhvec3 lBMin[HQBVHBINS - 1], rBMin[HQBVHBINS - 1], l1 = bvhvec3(BVH_FAR), l2 = bvhvec3 (-BVH_FAR);
+				bvhvec3 lBMax[HQBVHBINS - 1], rBMax[HQBVHBINS - 1], r1 = bvhvec3(BVH_FAR), r2 = bvhvec3(- BVH_FAR);
 				float ANL[HQBVHBINS - 1], ANR[HQBVHBINS - 1];
 				for (uint32_t lN = 0, rN = 0, i = 0; i < HQBVHBINS - 1; i++)
 				{
@@ -1753,7 +1753,7 @@ void BVH::BuildHQ()
 				{
 					// setup bins
 					bvhvec3 binMin[HQBVHBINS], binMax[HQBVHBINS];
-					for (uint32_t i = 0; i < HQBVHBINS; i++) binMin[i] = BVH_FAR, binMax[i] = -BVH_FAR;
+					for (uint32_t i = 0; i < HQBVHBINS; i++) binMin[i] = bvhvec3(BVH_FAR), binMax[i] = bvhvec3(-BVH_FAR);
 					uint32_t countIn[HQBVHBINS] = { 0 }, countOut[HQBVHBINS] = { 0 };
 					// populate bins with clipped fragments
 					const float planeDist = (node.aabbMax[a] - node.aabbMin[a]) / (HQBVHBINS * 0.9999f);
@@ -1784,8 +1784,8 @@ void BVH::BuildHQ()
 						}
 					}
 					// evaluate split candidates
-					bvhvec3 lBMin[HQBVHBINS - 1], rBMin[HQBVHBINS - 1], l1 = BVH_FAR, l2 = -BVH_FAR;
-					bvhvec3 lBMax[HQBVHBINS - 1], rBMax[HQBVHBINS - 1], r1 = BVH_FAR, r2 = -BVH_FAR;
+					bvhvec3 lBMin[HQBVHBINS - 1], rBMin[HQBVHBINS - 1], l1 = bvhvec3(BVH_FAR), l2 = bvhvec3(-BVH_FAR);
+					bvhvec3 lBMax[HQBVHBINS - 1], rBMax[HQBVHBINS - 1], r1 = bvhvec3(BVH_FAR), r2 = bvhvec3(-BVH_FAR);
 					float ANL[HQBVHBINS], ANR[HQBVHBINS];
 					for (uint32_t lN = 0, rN = 0, i = 0; i < HQBVHBINS - 1; i++)
 					{
@@ -6124,17 +6124,17 @@ void BVHBase::IntersectTri( Ray& ray, const bvhvec4slice& verts, const uint32_t 
 	const bvhvec4 vert0 = verts[vertIdx];
 	const bvhvec3 edge1 = verts[vertIdx + 1] - vert0;
 	const bvhvec3 edge2 = verts[vertIdx + 2] - vert0;
-	const bvhvec3 h = cross( ray.D, edge2 );
-	const float a = dot( edge1, h );
+	const bvhvec3 h = tinybvh::cross( ray.D, edge2 );
+	const float a = tinybvh::dot( edge1, h );
 	if (fabs( a ) < 0.0000001f) return; // ray parallel to triangle
 	const float f = 1 / a;
 	const bvhvec3 s = ray.O - bvhvec3( vert0 );
-	const float u = f * dot( s, h );
+	const float u = f * tinybvh::dot( s, h );
 	if (u < 0 || u > 1) return;
-	const bvhvec3 q = cross( s, edge1 );
-	const float v = f * dot( ray.D, q );
+	const bvhvec3 q = tinybvh::cross( s, edge1 );
+	const float v = f * tinybvh::dot( ray.D, q );
 	if (v < 0 || u + v > 1) return;
-	const float t = f * dot( edge2, q );
+	const float t = f * tinybvh::dot( edge2, q );
 	if (t > 0 && t < ray.hit.t)
 	{
 		// register a hit: ray is shortened to t
@@ -6151,12 +6151,12 @@ void BVHBase::IntersectTriIndexed( Ray& ray, const bvhvec4slice& verts, const ui
 	const bvhvec4 vert0 = verts[i0];
 	const bvhvec3 edge1 = verts[i1] - vert0;
 	const bvhvec3 edge2 = verts[i2] - vert0;
-	const bvhvec3 h = cross( ray.D, edge2 );
-	const float a = dot( edge1, h );
+	const bvhvec3 h = tinybvh::cross( ray.D, edge2 );
+	const float a = tinybvh::dot( edge1, h );
 	if (fabs( a ) < 0.0000001f) return; // ray parallel to triangle
 	const float f = 1 / a;
 	const bvhvec3 s = ray.O - bvhvec3( vert0 );
-	const float u = f * dot( s, h );
+	const float u = f * tinybvh::dot( s, h );
 	if (u < 0 || u > 1) return;
 	const bvhvec3 q = tinybvh::cross( s, edge1 );
 	const float v = f * tinybvh::dot( ray.D, q );
@@ -6177,17 +6177,17 @@ bool BVHBase::TriOccludes( const Ray& ray, const bvhvec4slice& verts, const uint
 	const bvhvec4 vert0 = verts[vertIdx];
 	const bvhvec3 edge1 = verts[vertIdx + 1] - vert0;
 	const bvhvec3 edge2 = verts[vertIdx + 2] - vert0;
-	const bvhvec3 h = cross( ray.D, edge2 );
-	const float a = dot( edge1, h );
+	const bvhvec3 h = tinybvh::cross( ray.D, edge2 );
+	const float a = tinybvh::dot( edge1, h );
 	if (fabs( a ) < 0.0000001f) return false; // ray parallel to triangle
 	const float f = 1 / a;
 	const bvhvec3 s = ray.O - bvhvec3( vert0 );
-	const float u = f * dot( s, h );
+	const float u = f * tinybvh::dot( s, h );
 	if (u < 0 || u > 1) return false;
-	const bvhvec3 q = cross( s, edge1 );
-	const float v = f * dot( ray.D, q );
+	const bvhvec3 q = tinybvh::cross( s, edge1 );
+	const float v = f * tinybvh::dot( ray.D, q );
 	if (v < 0 || u + v > 1) return false;
-	const float t = f * dot( edge2, q );
+	const float t = f * tinybvh::dot( edge2, q );
 	return t > 0 && t < ray.hit.t;
 }
 
@@ -6198,12 +6198,12 @@ bool BVHBase::IndexedTriOccludes( const Ray& ray, const bvhvec4slice& verts, con
 	const bvhvec4 vert0 = verts[i0];
 	const bvhvec3 edge1 = verts[i1] - vert0;
 	const bvhvec3 edge2 = verts[i2] - vert0;
-	const bvhvec3 h = cross( ray.D, edge2 );
-	const float a = dot( edge1, h );
+	const bvhvec3 h = tinybvh::cross( ray.D, edge2 );
+	const float a = tinybvh::dot( edge1, h );
 	if (fabs( a ) < 0.0000001f) return false; // ray parallel to triangle
 	const float f = 1 / a;
 	const bvhvec3 s = ray.O - bvhvec3( vert0 );
-	const float u = f * dot( s, h );
+	const float u = f * tinybvh::dot( s, h );
 	if (u < 0 || u > 1) return false;
 	const bvhvec3 q = tinybvh::cross( s, edge1 );
 	const float v = f * tinybvh::dot( ray.D, q );
