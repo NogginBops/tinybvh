@@ -444,6 +444,8 @@ inline bvhdbl3 operator*( double b, const bvhdbl3& a ) { return bvhdbl3( b * a.x
 inline bvhdbl3 operator/( double b, const bvhdbl3& a ) { return bvhdbl3( b / a.x, b / a.y, b / a.z ); }
 inline bvhdbl3 operator*=( bvhdbl3& a, const double b ) { return bvhdbl3( a.x * b, a.y * b, a.z * b ); }
 
+#endif // TINYBVH_USE_CUSTOM_VECTOR_TYPES
+
 inline double tinybvh_length( const bvhdbl3& a ) { return sqrt( a.x * a.x + a.y * a.y + a.z * a.z ); }
 inline bvhdbl3 tinybvh_normalize( const bvhdbl3& a )
 {
@@ -465,7 +467,6 @@ inline bvhdbl3 tinybvh_transform_vector( const bvhdbl3& v, const double* T )
 		T[5] * v.y + T[6] * v.z, T[8] * v.x + T[9] * v.y + T[10] * v.z );
 }
 
-#endif // TINYBVH_USE_CUSTOM_VECTOR_TYPES
 
 inline bvhdbl3 tinybvh_cross( const bvhdbl3& a, const bvhdbl3& b )
 {
