@@ -2416,7 +2416,18 @@ bool BVH::IsOccludedTLAS( const Ray& ray ) const
 				tmp.D = tinybvh_transform_vector( ray.D, inst.invTransform );
 				tmp.rD = tinybvh_safercp( tmp.D );
 				// 2. Traverse BLAS with the transformed ray
-				if (blas->IsOccluded( tmp )) return true;
+				//if (blas->IsOccluded( tmp )) return true;
+
+				assert(blas->layout == LAYOUT_BVH || blas->layout == LAYOUT_BVH4_CPU || blas->layout == LAYOUT_BVH_SOA);
+				if (blas->layout == LAYOUT_BVH)
+				{
+					if (((BVH*)blas)->IsOccluded(tmp)) return true;
+				}
+				else
+				{
+					if (blas->layout == LAYOUT_BVH4_CPU) if (((BVH4_CPU*)blas)->IsOccluded(tmp)) return true;
+					else if (blas->layout == LAYOUT_BVH_SOA) if (((BVH_SoA*)blas)->Intersect(tmp)) return true;
+				}
 			}
 			if (stackPtr == 0) break; else node = stack[--stackPtr];
 			continue;
@@ -4960,7 +4971,7 @@ inline void IntersectCompactTri( Ray& r, __m128& t4, const float* T )
 	const float v = T[4] * wr.x + T[5] * wr.y + T[6] * wr.z + T[7];
 	const bool hit = u >= 0 && v >= 0 && u + v < 1;
 #if INST_IDX_BITS == 32
-	if (hit) r.hit = { 0, ta, u, v, *(uint32_t*)&T[15] }, t4 = _mm_set1_ps( ta );
+	if (hit) r.hit = { r.instIdx, ta, u, v, *(uint32_t*)&T[15] }, t4 = _mm_set1_ps( ta );
 #else
 	if (hit) r.hit = { ta, u, v, *(uint32_t*)&T[15] }, t4 = _mm_set1_ps( ta );
 #endif
