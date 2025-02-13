@@ -86,7 +86,7 @@ THE SOFTWARE.
 #define TINY_BVH_H_
 
 // Run-time checks; disabled by default.
-// #define PARANOID
+#define PARANOID
 
 // Binned BVH building: bin count.
 #ifndef BVHBINS
@@ -509,7 +509,7 @@ typedef bvhvec4 SIMDVEC4;
 // error handling
 #define FATAL_ERROR(s) FATAL_ERROR_IF(1,s)
 #define FATAL_ERROR_IF(c,s) if (c) { fprintf( stderr, \
-	"Fatal error in tiny_bvh.h, line %i:\n%s\n", __LINE__, s ); exit( 1 ); }
+	"Fatal error in tiny_bvh.h, line %i:\n%s\n", __LINE__, s ); __debugbreak(); exit( 1 ); }
 
 // ============================================================================
 //
