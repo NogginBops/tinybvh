@@ -1,6 +1,3 @@
-# dev
-This is the **development branch** for tinybvh.
-
 # tinybvh
 Single-header BVH construction and traversal library written as "Sane C++" (or "C with classes"). Some C++11 is used, e.g. for threading. The library has no dependencies. 
 
@@ -32,45 +29,45 @@ Apart from the default BVH layout (simply named ````BVH````), several other layo
 * ````BVH```` : A compact format that stores the AABB for a node, along with child pointers and leaf information in a cross-platform-friendly way. The 32-byte size allows for cache-line alignment.
 * ````BVH_SoA```` : This format stores bounding box information in a SIMD-friendly format, making the BVH faster to traverse.
 * ````BVH_Double```` : Double-precision version of ````BVH````.
-* ````BVH_Verbose```` : A format designed for modifying BVHs, e.g. for post-build optimizations using ````BVH_Verbose::Optimize()````.
 * ````BVH_GPU```` : This format uses 64 bytes per node and stores the AABBs of the two child nodes. This is the format presented in the [2009 Aila & Laine paper](https://research.nvidia.com/sites/default/files/pubs/2009-08_Understanding-the-Efficiency/aila2009hpg_paper.pdf). It can be traversed with a simple GPU kernel.
 * ````MBVH<M>```` : In this (templated) format, each node stores M child pointers, reducing the depth of the tree. This improves performance for divergent rays. Based on the [2008 paper](https://graphics.stanford.edu/~boulos/papers/multi_rt08.pdf) by Ingo Wald et al.
 * ````BVH4_GPU```` : A more compact version of the ````BVH4```` format, which will be faster for GPU ray tracing.
-* ````BVH4_CPU```` : A SIMD-friendly version of the ````BVH4```` format, currently the fastest option for single-ray traversal on CPU.
+* ````BVH4_CPU```` : A SIMD-friendly version of the ````BVH4```` format.
+* ````BVH8_CPU```` : AVX2-optimized wide BVH traversal. Currently (by far) the fastest option on CPU.
 * ````BVH8_CWBVH```` : An advanced 80-byte representation of the 8-wide BVH, for state-of-the-art GPU rendering, based on the [2017 paper](https://research.nvidia.com/publication/2017-07_efficient-incoherent-ray-traversal-gpus-through-compressed-wide-bvhs) by Ylitie et al. and [code by AlanWBFT](https://github.com/AlanIWBFT/CWBVH).
 
 A BVH in the ````BVH```` format may be _refitted_, in case the triangles moved, using ````BVH::Refit````. Refitting is substantially faster than rebuilding and works well if the animation is subtle. Refitting does not work if polygon counts change.
 
-New in version 1.1.3: 'Self-contained' formats may be serialized and de-serialized via ````::Save```` and ````::Load````.
+New in version 1.1.3: Most layouts may be serialized and de-serialized via ````::Save```` and ````::Load````.
 
 A more complete overview of tinybvh functionality can be found in the [Basic Use Manual](https://jacco.ompf2.com/2025/01/24/tinybvh-manual-basic-use) and the [Advanced Topics Manual](https://jacco.ompf2.com/2025/01/25/tinybvh-manual-advanced).
 
 # How To Use
 The library ````tiny_bvh.h```` is designed to be easy to use. Please have a look at tiny_bvh_minimal.cpp for an example. A Visual Studio 'solution' (.sln/.vcxproj) is included, as well as a CMake file. That being said: The examples consists of only a single source file, which can be compiled with clang or g++, e.g.:
 
-````g++ -std=c++20 -mavx tiny_bvh_minimal.cpp -o tiny_bvh_minimal````
+````g++ tiny_bvh_minimal.cpp````
 
 The single-source sample **ASCII test renderer** can be compiled with
 
-````g++ -std=c++20 -mavx tiny_bvh_renderer.cpp -o tiny_bvh_renderer````
+````g++ tiny_bvh_renderer.cpp -o tiny_bvh_renderer````
 
 The cross-platform fenster-based single-source **bitmap renderer** can be compiled with
 
-````g++ -std=c++20 -mavx -mwindows -O3 tiny_bvh_fenster.cpp -o tiny_bvh_fenster```` (on windows)
+````g++ -mwindows -O3 tiny_bvh_fenster.cpp -o tiny_bvh_fenster```` (on windows)
 
-```g++ -std=c++20 -mavx -O3 -framework Cocoa tiny_bvh_fenster.cpp -o tiny_bvh_fenster``` (on macOS)
+````g++ -framework -O3 Cocoa tiny_bvh_fenster.cpp -o tiny_bvh_fenster```` (on macOS)
 
 The multi-threaded **path tracing** demo can be compiled with
 
-````g++ -std=c++20 -mavx -mwindows -O3 tiny_bvh_pt.cpp -o tiny_bvh_pt```` (on windows)
+````g++ -mwindows -O3 tiny_bvh_pt.cpp -o tiny_bvh_pt```` (on windows)
 
 The **performance measurement tool** can be compiled with:
 
-````g++ -std=c++20 -mavx -Ofast tiny_bvh_speedtest.cpp -o tiny_bvh_speedtest````
+````g++ -mavx2 -mfma -Ofast tiny_bvh_speedtest.cpp -o tiny_bvh_speedtest````
 
-# Version 1.3.6
+# Version 1.4.9
 
-Version 1.3.0 changed the names of vector math functions, which are now prepended with ````tinybvh_````, e.g. ````tinybvh_cross````, ````tinybvh_normalize````. This avoids name clashes in applications that override the vector types with their own. Basically tinybvh evades these so you don't have to. 
+Version 1.4.0 introduces a new BVH layout for fast single-ray traversal on CPU: BVH8_CPU. This supersedes the previous fastest scheme, BVH4_CPU. 
 
 Version 1.1.0 introduced a <ins>change to the API</ins>. The single BVH class with multiple layouts has been replaced with a BVH class per layout. You can simply instantiate the desired layout; conversion (and data ownership) is then handled properly by the library. Examples:
 
@@ -100,7 +97,7 @@ BVH bvh;
 bvh.BuildHQ( verts, indices, triCount );
 BVH_Verbose tmp;
 tmp.ConvertFrom( bvh );
-tmp.Optimize( 100000 );
+tmp.Optimize( 100 );
 bvh.ConvertFrom( tmp );
 printf( "Optimized BVH SAH cost: %f\n", bvh.SAHCost() );
 ````
@@ -108,29 +105,32 @@ printf( "Optimized BVH SAH cost: %f\n", bvh.SAHCost() );
 Note that in this case, data ownership and lifetime must be managed carefully. Specifically, layouts converted from other layouts use data from the original, so both must be kept alive.
 
 This version of the library includes the following functionality:
-* Binned SAH BVH builder
+* Reference binned SAH BVH builder
 * Fast binned SAH BVH builder using AVX intrinsics
 * Fast binned SAH BVH builder using NEON intrinsices, by [wuyakuma](https://github.com/wuyakuma)
-* TLAS builder with instancing and TLAS/BLAS traversal
+* Customizable SAH parameters
+* TLAS builder with instancing and fast TLAS/BLAS traversal, even for 'mixed trees'
 * Double-precision binned SAH BVH builder
 * Support for custom geometry and mixed scenes
 * Example code for GPU TLAS/BLAS traversal (dragon invasion demo, tiny_bvh_gpu2.cpp)
 * Example TLAS/BLAS application using OpenGL interop (windows only)
 * Spatial Splits ([SBVH](https://www.nvidia.in/docs/IO/77714/sbvh.pdf), Stich et al., 2009) builder, including "unsplitting"
-* 'Compressed Wide BVH' (CWBVH) data structure
 * BVH optimizer: reduces SAH cost and improves ray tracing performance ([Bittner et al., 2013](https://dspace.cvut.cz/bitstream/handle/10467/15603/2013-Fast-Insertion-Based-Optimization-of-Bounding-Volume-Hierarchies.pdf))
 * Collapse to N-wide MBVH using templated code
 * Conversion of 4-wide BVH to GPU-friendly 64-byte quantized format
+* 'Compressed Wide BVH' (CWBVH) data structure
 * Single-ray and packet traversal
 * Sphere/BVH collision detection via BVH::IntersectSphere(..)
 * BVH (de)serialization for most layouts
+* Fast AVX2 ray tracing: Implements the 2017 paper by [Fuetterling et al.](https://web.cs.ucdavis.edu/~hamann/FuetterlingLojewskiPfreundtHamannEbertHPG2017PaperFinal06222017.pdf)
 * Fast triangle intersection: Implements the 2016 paper by [Baldwin & Weber](https://jcgt.org/published/0005/03/03/paper.pdf)
-* OpenCL traversal: Aila & Laine, 4-way quantized, CWBVH
+* OpenCL traversal example code: Aila & Laine, 4-way quantized, CWBVH
+* OpenCL support for MacOS, by [wuyakuma](https://github.com/wuyakuma)
 * Support for WASM / EMSCRIPTEN, g++, clang, Visual Studio
 * Optional user-defined memory allocation, by [Thierry Cantenot](https://github.com/tcantenot)
 * Vertex array can now have a custom stride, by [David Peicho](https://github.com/DavidPeicho)
 * Vertex array can now be indexed
-* Custom primitives can be intersected via callbacks (new in 1.2.2)
+* Custom primitives can be intersected via callbacks, also in double-precision BVHs
 * Clear data ownership and intuitive management via the new and simplified API, with lots of help from David Peicho
 * You can now also BYOVT ('bring your own vector types'), thanks [Tijmen Verhoef](https://github.com/nemjit001)
 * 'SpeedTest' tool that times and validates all (well, most) traversal kernels
@@ -140,26 +140,30 @@ The current version of the library is rapidly gaining functionality. Please expe
 
 Plans, ordered by priority:
 
-* NEW: We now also use the "Issues" list for this!
 * Speed improvements:
   * Faster optimizer for AVX-capable CPUs
   * Improve speed of SBVH builder
+* Features & outstanding issues:
+  * 'Watertight' triangle intersection option
+  * Use PARANOID flag to check NaNs and more
+* Demo of tinybvh on GPU using other apis:
+  * Ray tracing in pure OpenGL
+  * Ray tracing in pure DirectX
+  * SDL3 sample application
 * Bridge to rt hw / layouts:
   * Produce a BVH for Intel rt hw (mind the quads)
   * Produce a BVH for AMD rt hw
   * Use inline asm on AMD for aabb/tri intersect
-  * Support templated N-wide BVH
-* Demo of tinybvh on GPU using other apis:
-  * Ray tracing in pure OpenGL
-  * Ray tracing in pure DirectX
 * Comparisons / experiments:
-  * Other ray distributions in speedtest
   * Memory use analysis in speedtest
   * DXR renderer to compare against hw rt
 * CPU single-ray performance
+  * Experiment with 1, 4 and 8 tris in BVH8_CPU
   * Reverse-engineer Embree & PhysX
-  * Implement Fuetterling et al.'s 2017 paper
   * Combination of TLAS and packet traversal
+* Ease-of-use
+  * Robust default origin offset
+  * Engine layer
   
 # tinybvh in the Wild
 A list of projects using tinybvh:

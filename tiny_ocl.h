@@ -1,7 +1,7 @@
 /*
 The MIT License (MIT)
 
-Copyright (c) 2024, Jacco Bikker / Breda University of Applied Sciences.
+Copyright (c) 2024-2025, Jacco Bikker / Breda University of Applied Sciences.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
+// Mar 03, '25: version 0.2.0 : MacOS support, by wuyakuma
 // Nov 18, '24: version 0.1.1 : Added custom alloc/free.
 // Nov 15, '24: version 0.1.0 : Accidentally started another tiny lib.
 
@@ -43,43 +44,38 @@ THE SOFTWARE.
 #include <vector>
 
 // aligned memory allocation
-// note: formally size needs to be a multiple of 'alignment'. See:
-// https://en.cppreference.com/w/c/memory/aligned_alloc
-// EMSCRIPTEN enforces this.
-// Copy of the same construct in tinybvh, different namespace.
+// note: formally, size needs to be a multiple of 'alignment', see:
+// https://en.cppreference.com/w/c/memory/aligned_alloc.
+// EMSCRIPTEN enforces this. 
+// Copy of the same construct in tinyocl, in a different namespace.
 namespace tinyocl {
-inline size_t make_multiple_64( size_t x ) { return (x + 63) & ~0x3f; }
-}
+inline size_t make_multiple_of( size_t x, size_t alignment ) { return (x + (alignment - 1)) & ~(alignment - 1); }
 #ifdef _MSC_VER // Visual Studio / C11
 #define ALIGNED( x ) __declspec( align( x ) )
-namespace tinyocl {
-inline void* malloc64( size_t size, void* = nullptr )
-{
-	return size == 0 ? 0 : _aligned_malloc( make_multiple_64( size ), 64 );
-}
-inline void free64( void* ptr, void* = nullptr ) { _aligned_free( ptr ); }
-}
+#define _ALIGNED_ALLOC(alignment,size) _aligned_malloc( make_multiple_of( size, alignment ), alignment );
+#define _ALIGNED_FREE(ptr) _aligned_free( ptr );
 #else // EMSCRIPTEN / gcc / clang
 #define ALIGNED( x ) __attribute__( ( aligned( x ) ) )
-#if defined(__x86_64__) || defined(_M_X64) || defined(__wasm_simd128__) || defined(__wasm_relaxed_simd__)
+#if !defined(TINYBVH_NO_SIMD) && (defined(__x86_64__) || defined(_M_X64) || defined(__wasm_simd128__) || defined(__wasm_relaxed_simd__))
 #include <xmmintrin.h>
-namespace tinyocl {
-inline void* malloc64( size_t size, void* = nullptr )
-{
-	return size == 0 ? 0 : _mm_malloc( make_multiple_64( size ), 64 );
-}
-inline void free64( void* ptr, void* = nullptr ) { _mm_free( ptr ); }
-}
+#define _ALIGNED_ALLOC(alignment,size) _mm_malloc( make_multiple_of( size, alignment ), alignment );
+#define _ALIGNED_FREE(ptr) _mm_free( ptr );
 #else
-namespace tinyocl {
-inline void* malloc64( size_t size, void* = nullptr )
-{
-	return size == 0 ? 0 : aligned_alloc( 64, make_multiple_64( size ) );
-}
-inline void free64( void* ptr, void* = nullptr ) { free( ptr ); }
-}
+#if defined __GNUC__ && !defined __APPLE__
+#define _ALIGNED_ALLOC(alignment,size) _aligned_malloc( alignment, size );
+#else
+#define _ALIGNED_ALLOC(alignment,size) aligned_alloc( alignment, size );
+#endif
+#define _ALIGNED_FREE(ptr) free( ptr );
 #endif
 #endif
+inline void* malloc64( size_t size, void* = nullptr ) { return size == 0 ? 0 : _ALIGNED_ALLOC( 64, size ); }
+inline void* malloc4k( size_t size, void* = nullptr ) { return size == 0 ? 0 : _ALIGNED_ALLOC( 4096, size ); }
+inline void* malloc32k( size_t size, void* = nullptr ) { return size == 0 ? 0 : _ALIGNED_ALLOC( 32768, size ); }
+inline void free64( void* ptr, void* = nullptr ) { _ALIGNED_FREE( ptr ); }
+inline void free4k( void* ptr, void* = nullptr ) { _ALIGNED_FREE( ptr ); }
+inline void free32k( void* ptr, void* = nullptr ) { _ALIGNED_FREE( ptr ); }
+}; // namespace tiybvh
 
 namespace tinyocl {
 
@@ -359,7 +355,7 @@ private:
 	inline static cl_context context; // simplifies some things, but limits us to one device
 	inline static cl_command_queue queue, queue2;
 	inline static char* log = 0;
-	inline static bool isNVidia = false, isAMD = false, isIntel = false, isOther = false;
+	inline static bool isNVidia = false, isAMD = false, isIntel = false, isApple = false, isOther = false;
 	inline static bool isAmpere = false, isTuring = false, isPascal = false;
 	inline static bool isAda = false, isBlackwell = false, isRubin = false, isHopper = false;
 	inline static int vendorLines = 0;
@@ -753,6 +749,7 @@ Kernel::Kernel( const char* file, const char* entryPoint )
 	if (isNVidia) csText = "#define ISNVIDIA\n" + csText, vendorLines++;
 	if (isAMD) csText = "#define ISAMD\n" + csText, vendorLines++;
 	if (isIntel) csText = "#define ISINTEL\n" + csText, vendorLines++;
+	if (isApple) csText = "#define ISAPPLE\n" + csText, vendorLines++;
 	if (isOther) csText = "#define ISOTHER\n" + csText, vendorLines++;
 	if (isAmpere) csText = "#define ISAMPERE\n" + csText, vendorLines++;
 	if (isTuring) csText = "#define ISTURING\n" + csText, vendorLines++;
@@ -962,7 +959,11 @@ bool Kernel::InitCL()
 			string deviceList( extensions );
 			free( extensions );
 			string mustHave[] = {
+#if defined(__APPLE__) && defined(__MACH__)
+				"cl_APPLE_gl_sharing",
+#else
 				"cl_khr_gl_sharing",
+#endif
 				"cl_khr_global_int32_base_atomics"
 			};
 			bool hasAll = true;
@@ -1067,6 +1068,10 @@ bool Kernel::InitCL()
 	{
 		isIntel = true;
 	}
+	else if (strstr( d, "apple" ))
+	{
+		isApple = true;
+	}
 	else
 	{
 		isOther = true;
@@ -1092,17 +1097,31 @@ bool Kernel::InitCL()
 	{
 		printf( "Intel.\n" );
 	}
+	else if (isApple)
+	{
+		printf( "Apple.\n" );
+	}
 	else
 	{
 		printf( "identification failed.\n" );
 	}
 	// create a command-queue
+#if defined(__APPLE__) && defined(__MACH__)
+	// Cannot find symbol for _clCreateCommandQueueWithProperties on APPLE
+	cl_command_queue_properties props = CL_QUEUE_PROFILING_ENABLE;
+	queue = clCreateCommandQueue( context, devices[deviceUsed], props, &error );
+	if (!CHECKCL( error )) return false;
+	// create a second command queue for asynchronous copies
+	queue2 = clCreateCommandQueue( context, devices[deviceUsed], props, &error );
+	if (!CHECKCL( error )) return false;
+#else
 	cl_queue_properties props[] = { CL_QUEUE_PROPERTIES, CL_QUEUE_PROFILING_ENABLE, 0 };
 	queue = clCreateCommandQueueWithProperties( context, devices[deviceUsed], props, &error );
 	if (!CHECKCL( error )) return false;
 	// create a second command queue for asynchronous copies
 	queue2 = clCreateCommandQueueWithProperties( context, devices[deviceUsed], props, &error );
 	if (!CHECKCL( error )) return false;
+#endif
 	// cleanup
 	delete[] devices;
 	clStarted = true;

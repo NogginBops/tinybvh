@@ -31,8 +31,18 @@ float4 traverse_ailalaine( global struct BVHNodeAlt* altNode, global unsigned* i
 			for (unsigned i = 0; i < triCount; i++)
 			{
 				const unsigned triIdx = idx[firstTri + i];
+#ifdef ISAPPLE
+				// FIX error: initializing 'const __private float4 *__private' with an expression of type '__global float4 *' changes address space of pointer
+				const float4 tri[3] = 
+				{
+					verts[3 * triIdx],
+					verts[3 * triIdx + 1],
+					verts[3 * triIdx + 2],
+				};
+#else
 				const float4* tri = verts + 3 * triIdx;
-				// triangle intersection - Möller-Trumbore
+#endif
+				// triangle intersection - Mï¿½ller-Trumbore
 				const float4 edge1 = tri[1] - tri[0], edge2 = tri[2] - tri[0];
 				const float3 h = cross( D, edge2.xyz );
 				const float a = dot( edge1.xyz, h );
@@ -40,10 +50,9 @@ float4 traverse_ailalaine( global struct BVHNodeAlt* altNode, global unsigned* i
 				const float f = 1 / a;
 				const float3 s = O - tri[0].xyz;
 				const float u = f * dot( s, h );
-				if (u < 0 || u > 1) continue;
 				const float3 q = cross( s, edge1.xyz );
 				const float v = f * dot( D, q );
-				if (v < 0 || u + v > 1) continue;
+				if (u < 0 || v < 0 || u + v > 1) continue;
 				const float d = f * dot( edge2.xyz, q );
 				if (d > 0.0f && d < hit.x) hit = (float4)(d, u, v, as_float( triIdx ));
 			}
@@ -100,8 +109,18 @@ bool isoccluded_ailalaine( global struct BVHNodeAlt* altNode, global unsigned* i
 			for (unsigned i = 0; i < triCount; i++)
 			{
 				const unsigned triIdx = idx[firstTri + i];
+#ifdef ISAPPLE
+				// FIX error: initializing 'const __private float4 *__private' with an expression of type '__global float4 *' changes address space of pointer
+				const float4 tri[3] = 
+				{
+					verts[3 * triIdx],
+					verts[3 * triIdx + 1],
+					verts[3 * triIdx + 2],
+				};
+#else
 				const float4* tri = verts + 3 * triIdx;
-				// triangle intersection - Möller-Trumbore
+#endif
+				// triangle intersection - Mï¿½ller-Trumbore
 				const float4 edge1 = tri[1] - tri[0], edge2 = tri[2] - tri[0];
 				const float3 h = cross( D, edge2.xyz );
 				const float a = dot( edge1.xyz, h );
@@ -109,10 +128,9 @@ bool isoccluded_ailalaine( global struct BVHNodeAlt* altNode, global unsigned* i
 				const float f = 1 / a;
 				const float3 s = O - tri[0].xyz;
 				const float u = f * dot( s, h );
-				if (u < 0 || u > 1) continue;
 				const float3 q = cross( s, edge1.xyz );
 				const float v = f * dot( D, q );
-				if (v < 0 || u + v > 1) continue;
+				if (u < 0 || v < 0 || u + v > 1) continue;
 				const float d = f * dot( edge2.xyz, q );
 				if (d > 0.0f && d < tmax) return true;
 			}
