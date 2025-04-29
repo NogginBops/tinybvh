@@ -49,27 +49,31 @@ The library ````tiny_bvh.h```` is designed to be easy to use. Please have a look
 
 The single-source sample **ASCII test renderer** can be compiled with
 
-````g++ tiny_bvh_renderer.cpp -o tiny_bvh_renderer````
+````c++ --std=c++17 tiny_bvh_renderer.cpp -o tiny_bvh_renderer````
 
 The cross-platform fenster-based single-source **bitmap renderer** can be compiled with
 
 ````g++ -mwindows -O3 tiny_bvh_fenster.cpp -o tiny_bvh_fenster```` (on windows)
 
-````g++ -framework -O3 Cocoa tiny_bvh_fenster.cpp -o tiny_bvh_fenster```` (on macOS)
+````c++ --std=c++17 -framework Cocoa -O3 tiny_bvh_fenster.cpp -o tiny_bvh_fenster```` (on macOS)
 
 The multi-threaded **path tracing** demo can be compiled with
 
 ````g++ -mwindows -O3 tiny_bvh_pt.cpp -o tiny_bvh_pt```` (on windows)
 
+````c++ --std=c++17 -framework Cocoa -O3 tiny_bvh_pt.cpp -o tiny_bvh_pt```` (on macOS)
+
 The **performance measurement tool** can be compiled with:
 
-````g++ -mavx2 -mfma -Ofast tiny_bvh_speedtest.cpp -o tiny_bvh_speedtest````
+````g++ -mavx2 -mfma -Ofast tiny_bvh_speedtest.cpp -o tiny_bvh_speedtest```` (on windows)
 
-# Version 1.5.0
+````c++ --std=c++17 -framework OpenCL -Ofast tiny_bvh_speedtest.cpp -o tiny_bvh_speedtest```` (on macOS)
 
-Version 1.5.0 introduces a new fast layout for x86/x64 systems that do not (or cannot be presumed to) support AVX2. For those, please use BVH4_CPU form optimal performance (about 80% of the fastest AVX2 code).
+# Version 1.5.2
 
-Version 1.4.0 introduces a new BVH layout for fast single-ray traversal on CPU: BVH8_CPU. This supersedes the previous fastest scheme, BVH4_CPU. 
+Version 1.5.0 introduced a new fast layout for x86/x64 systems that do not (or cannot be presumed to) support AVX2. For those, please use BVH4_CPU form optimal performance (about 80% of the fastest AVX2 code).
+
+Version 1.4.0 introduced a new BVH layout for fast single-ray traversal on CPU: BVH8_CPU. This supersedes the previous fastest scheme, BVH4_CPU. 
 
 Version 1.1.0 introduced a <ins>change to the API</ins>. The single BVH class with multiple layouts has been replaced with a BVH class per layout. You can simply instantiate the desired layout; conversion (and data ownership) is then handled properly by the library. Examples:
 
@@ -128,6 +132,7 @@ This version of the library includes the following functionality:
 * Fast AVX2 ray tracing: Implements the 2017 paper by [Fuetterling et al.](https://web.cs.ucdavis.edu/~hamann/FuetterlingLojewskiPfreundtHamannEbertHPG2017PaperFinal06222017.pdf)
 * Fast SSE4.2 ray tracing: A modified version of the AVX2 implementation using just SSE4.2 achieves 80% of AVX2 performance.
 * Fast triangle intersection: Implements the 2016 paper by [Baldwin & Weber](https://jcgt.org/published/0005/03/03/paper.pdf)
+* 'Watertight' ray/triangle intersection, based on the [paper](https://jcgt.org/published/0002/01/05/paper.pdf) by Woop et al.
 * OpenCL traversal example code: Aila & Laine, 4-way quantized, CWBVH
 * OpenCL support for MacOS, by [wuyakuma](https://github.com/wuyakuma)
 * Support for WASM / EMSCRIPTEN, g++, clang, Visual Studio
